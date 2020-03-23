@@ -6,15 +6,16 @@
 """
 import json
 import requests
-from pprint import pprint
 import sys
 
 import click
 import pandas as pd
-from prompt_toolkit.shortcuts import CompleteStyle, prompt
+from prompt_toolkit.shortcuts import prompt
 from prompt_toolkit.history import FileHistory
 from prompt_toolkit.auto_suggest import AutoSuggestFromHistory
-from prompt_toolkit.completion import Completer, Completion, WordCompleter, FuzzyCompleter
+from prompt_toolkit.completion import Completer
+from prompt_toolkit.completion import Completion
+from prompt_toolkit.completion import FuzzyCompleter
 
 from elasticsearch import Elasticsearch
 es = Elasticsearch([{'host': 'localhost', 'port': 9200}])
