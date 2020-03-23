@@ -122,10 +122,11 @@ def searchbar():
                     results += f'\n\tGame-play: {hit["mechanic"]}\n\n'
 
                 click.echo_via_pager(num_results + results)  # mega f-string!
+
             if len(hits) < 1:
                 zero_results_count += 1
 
 
 if __name__ == '__main__':
-    # load_data()
+    load_data()
     searchbar()
