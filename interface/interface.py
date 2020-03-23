@@ -19,9 +19,6 @@ from prompt_toolkit.completion import Completer, Completion, WordCompleter, Fuzz
 from elasticsearch import Elasticsearch
 es = Elasticsearch([{'host': 'localhost', 'port': 9200}])
 
-# TODO: maybe asynchronous
-# text = prompt('> ', completer=MyCustomCompleter(), complete_in_thread=True)
-
 
 class CustomCompleter(Completer):
     def get_completions(self, document, complete_event):
@@ -57,11 +54,33 @@ def load_data():
         sys.exit(1)
 
 
+def min_2_hr(mins):
+    """
+    Helper function for playing time
+    """
+    return f'{mins//60}hr {mins%60}min'
+
+
+def comp_level(num):
+    """
+    Helper for complexity level out of five.
+    """
+    if num < 2.25:
+        return "Low"
+    elif num < 3.75:
+        return "Medium"
+    else:
+        return "High"
+
+
 def searchbar():
     """
     """
 
     print('\nWelcome! This is a simulation of a search bar for our app.\n')
+
+    zero_results_count = 0
+    search_count = 0
 
     prompting = True
     while prompting:
@@ -77,22 +96,34 @@ def searchbar():
 
         if user_input in ['q', 'quit', 'x', 'exit']:
             prompting = False
-            print('\nQuitting. Thanks!\n')
+            print(f'\nQuitting. Thanks!\n\n{zero_results_count}/{search_count} searches returned zero results.\n')
         else:
+            search_count += 1
             result = es.search(index="games_df", body={"size" : 10, "query": {"multi_match" : { "query" : user_input, "fields": ["name^2", "designer"]}}})
             if result:
                 hits = [hit['_source'] for hit in result['hits']['hits']]
-                num_results = f'\nFound {len(hits)} results.'
+                num_results = f'\nDisplaying {len(hits)}/{len(hits)} results\n'
                 results = f''
                 for hit in hits:
-                    results += f'\n{"-"*80}'
-                    results += f'\n{hit["name"]} ({hit["version_published"]})'
-                    results += f'\n\tRated {hit["avg_rating"]:.2f} out of 10'
-                    results += f'\n\t{hit["min_players"]}-{hit["max_players"]} players'
-                click.echo_via_pager(num_results + results)
-            else:
-                header = f'search:\t{user_input}\n{"-"*80}\n\nThese are the results for your search\n\n'
-                click.echo_via_pager(header)
+                    results += f'\n{"-"*80}\n\n'
+                    results += f'\n{hit["name"]} ({hit["version_published"]})\n'
+                    results += f'\n\tCreated by {hit["designer"]}\n'
+
+                    rated, players, pt, min, comp, votes = 'Rated:', 'Players:', 'Playing time:', 'Rec. minimum age:', 'Complexity:', 'Number of votes:'
+                    results += f'\n\t|{rated:>20}\t {hit["avg_rating"]:.1f}/10.0'
+                    results += f'\n\t|{players:>20}\t {hit["min_players"]}-{hit["max_players"]}'
+                    results += f'\n\t|{pt:>20}\t~{min_2_hr(hit["playing_time"])}'
+                    results += f'\n\t|'
+                    results += f'\n\t|{comp:>20}\t {comp_level(hit["complexity_out_of_5"])} ({hit["complexity_out_of_5"]:.1f}/5.0)'
+                    results += f'\n\t|{min:>20}\t {hit["recommended_min_age"]} years old'
+                    results += f'\n\t|{votes:>20}\t {format(hit["num_votes"], ",")}\n'
+
+                    results += f'\n\tCategory: {hit["category"]}'
+                    results += f'\n\tGame-play: {hit["mechanic"]}\n\n'
+
+                click.echo_via_pager(num_results + results)  # mega f-string!
+            if len(hits) < 1:
+                zero_results_count += 1
 
 
 if __name__ == '__main__':
