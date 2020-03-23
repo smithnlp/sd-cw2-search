@@ -66,8 +66,11 @@ def searchbar():
     prompting = True
     while prompting:
 
-        user_input = prompt("(searchbar) | ", completer=FuzzyCompleter(CustomCompleter()))
-        # user_input = prompt("(searchbar) | ", completer=CustomCompleter())
+        user_input = prompt("(searchbar) | ",
+                            history=FileHistory('history.txt'),
+                            auto_suggest=AutoSuggestFromHistory(),
+                            completer=FuzzyCompleter(CustomCompleter()),
+                            complete_in_thread=True)
 
         if user_input in ['q', 'quit', 'x', 'exit']:
             prompting = False
