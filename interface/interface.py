@@ -72,24 +72,29 @@ def searchbar():
                             completer=FuzzyCompleter(CustomCompleter()),
                             complete_in_thread=True)
 
+        if user_input == '':  # when just entering
+            continue  # don't open a pager with nothing in it
+
         if user_input in ['q', 'quit', 'x', 'exit']:
             prompting = False
             print('\nQuitting. Thanks!\n')
         else:
-            # TODO: make actual results from es and format them very nicely
-            header = f'search:\t{user_input}\n{"-"*80}\n\nThese are the results for your search\n\n'
-            # this, this, that = es., es., es.
-            # result = f''
-            click.echo_via_pager(header)
+            result = es.search(index="games_df", body={"size" : 10, "query": {"multi_match" : { "query" : user_input, "fields": ["name^2", "designer"]}}})
+            if result:
+                hits = [hit['_source'] for hit in result['hits']['hits']]
+                num_results = f'\nFound {len(hits)} results.'
+                results = f''
+                for hit in hits:
+                    results += f'\n{"-"*80}'
+                    results += f'\n{hit["name"]} ({hit["version_published"]})'
+                    results += f'\n\tRated {hit["avg_rating"]:.2f} out of 10'
+                    results += f'\n\t{hit["min_players"]}-{hit["max_players"]} players'
+                click.echo_via_pager(num_results + results)
+            else:
+                header = f'search:\t{user_input}\n{"-"*80}\n\nThese are the results for your search\n\n'
+                click.echo_via_pager(header)
 
 
 if __name__ == '__main__':
     # load_data()
-    # result = es.search(index="games_df", body={"query": {"prefix" : { "name" : "orl" }}})
-    # result = es.search(index="games_df", body={"size" : 50, "query": {"match_all" : {}}})
-    # top = [hit['_source']['name'] for hit in result['hits']['hits']]
-    # pprint(top)
-    # print(len(top))
-    # result = es.search(index="games_df", body={"query": {"prefix" : { "name" : "orl" }}})
-    # pprint(result)
     searchbar()
