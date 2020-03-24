@@ -68,6 +68,7 @@ def searchbar():
     """
 
     print('\nWelcome! This is a simulation of a search bar for our app.\n')
+    print('\nType a query and press enter. This will pop open a window displaying the results of your search. Press q to quit and return to the searchbar.\n')
 
     zero_results_count = 0
     search_count = 0
