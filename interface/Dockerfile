@@ -1,5 +1,7 @@
 FROM alpine
 
+LABEL sdproto="true"
+
 COPY requirements.txt .
 COPY games.csv .
 COPY interface.py .

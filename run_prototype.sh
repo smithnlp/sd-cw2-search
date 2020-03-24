@@ -13,4 +13,5 @@ docker-compose run interface
 
 # clean up
 # https://docs.docker.com/compose/reference/down/
-docker-compose down
+docker-compose down &&
+docker image rm $(docker image ls --filter="label=sdproto=true" --quiet)
