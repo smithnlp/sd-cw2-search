@@ -8,6 +8,7 @@ import csv
 import json
 import requests
 import sys
+import time
 
 import click
 from prompt_toolkit.shortcuts import prompt
@@ -18,7 +19,6 @@ from prompt_toolkit.completion import Completion
 from prompt_toolkit.completion import FuzzyCompleter
 
 from elasticsearch import Elasticsearch
-es = Elasticsearch([{'host': 'localhost', 'port': 9200}])
 
 
 class CustomCompleter(Completer):
@@ -118,5 +118,7 @@ def searchbar():
 
 
 if __name__ == '__main__':
+    time.sleep(45)
+    es = Elasticsearch([{'host': 'esearch', 'port': 9200}])
     load_data()
     searchbar()
