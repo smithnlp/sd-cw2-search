@@ -42,6 +42,8 @@ echo
 # tidy up
 # https://docs.docker.com/compose/reference/down/
 docker-compose down &&
+# also, delete the images because it's likely you don't want them taking up space after a single use
+# use a special label added within the Dockerfiles to easily find them and remove
 docker image rm $(docker image ls --filter="label=sdproto=true" --quiet) &&
 
 echo

@@ -1,16 +1,12 @@
+"""The main program which runs the interactive search prototype.
 """
-1. ES running (depends on)
-2. Instantiate the wrapper and connect to running server
-3. Load data from file into ES
-4. Start the searchbar
-"""
+# standard library
 import csv
 import json
-import requests
-import sys
 import time
-
+# for opening the default pager with search results (Less)
 import click
+# https://python-prompt-toolkit.readthedocs.io/en/master/pages/getting_started.html
 from prompt_toolkit.shortcuts import prompt
 from prompt_toolkit.history import FileHistory
 from prompt_toolkit.auto_suggest import AutoSuggestFromHistory
@@ -22,11 +18,20 @@ from elasticsearch import Elasticsearch
 
 
 class CustomCompleter(Completer):
+    """
+    Auto-completion following the documentation for prompt_toolkit:
+    https://python-prompt-toolkit.readthedocs.io/en/master/pages/asking_for_input.html#a-custom-completer
+    """
+
     def get_completions(self, document, complete_event):
+
+        # what's typed so far
         word = document.get_word_before_cursor()
+        # on-the-fly search of elasticsearch to derive auto-complete suggestions
         result = es.search(index="games", body={"size" : 50, "query": {"prefix" : { "name" : word }}})
         if result:
             # could make this conditional on some score threshold (if hits['_score'] > thresh)
+            # parse the ES result
             top = [hit['_source']['name'] for hit in result['hits']['hits']]
             for name in top:
                 if name.startswith(word):
@@ -37,6 +42,7 @@ class CustomCompleter(Completer):
 
 def load_data():
     """
+    Add every game (row) from the csv database into the elasticsearch instance.
     """
     with open('games.csv', 'r') as csvfile:
         reader = csv.DictReader(csvfile)
@@ -46,14 +52,14 @@ def load_data():
 
 def min_2_hr(mins):
     """
-    Helper function for playing time
+    Helper function for transforming playing time in minutes to and Hour+Min format.
     """
     return f'{mins//60}hr {mins%60}min'
 
 
 def comp_level(num):
     """
-    Helper for complexity level out of five.
+    Helper function for translating complexity level out of five into a word rating.
     """
     if num < 2.25:
         return "Low"
@@ -68,7 +74,8 @@ def searchbar():
     """
 
     print('\nWelcome! This is a simulation of a search bar for our app.\n')
-    print('\nType a query and press enter. This will pop open a window displaying the results of your search. Press q to quit and return to the searchbar.\n')
+    print('\nType a query and press enter. This will pop open a window displaying the results of your search. Press q to quit that window and return to the searchbar.\n')
+    print('\nWhen you\'re done searching and ready to close the prototype, enter "exit" or "quit" as a search query to shut everything down.\n')
 
     zero_results_count = 0
     search_count = 0
@@ -82,16 +89,20 @@ def searchbar():
                             completer=FuzzyCompleter(CustomCompleter()),
                             complete_in_thread=True)
 
-        if user_input == '':  # when just entering
-            continue  # don't open a pager with nothing in it
+        if user_input == '':  # when just pressing Enter
+            continue  # don't open a pager with nothing in it or count it as a search
 
         if user_input in ['q', 'quit', 'x', 'exit']:
             prompting = False
             print(f'\nQuitting. Thanks!\n\n{zero_results_count}/{search_count} searches returned zero results.\n')
         else:
             search_count += 1
+
+            # the actual searching within the search prototype
             result = es.search(index="games", body={"size" : 10, "query": {"multi_match" : { "query" : user_input, "fields": ["name^2", "designer"]}}})
+
             if result:
+                # parse the ES response and accumulate into a giant string for output to less
                 hits = [hit['_source'] for hit in result['hits']['hits']]
                 num_results = f'\nDisplaying {len(hits)}/{len(hits)} results\n'
                 results = f''
@@ -115,11 +126,17 @@ def searchbar():
                 click.echo_via_pager(num_results + results)  # mega f-string!
 
             if len(hits) < 1:
+                # a "miss"
                 zero_results_count += 1
 
 
 if __name__ == '__main__':
+    # To avoid error messages flooding the screen, wait for 45 seconds for
+    # Elasticsearch to load before trying to connect to it
     time.sleep(45)
     es = Elasticsearch([{'host': 'esearch', 'port': 9200}])
+
+    # load the csv data into ES
     load_data()
+    # run the prototype
     searchbar()
