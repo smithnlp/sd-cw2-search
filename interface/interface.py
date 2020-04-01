@@ -3,6 +3,7 @@
 # standard library
 import csv
 import json
+import re
 import time
 # for opening the default pager with search results (Less)
 import click
@@ -73,8 +74,8 @@ def searchbar():
     """
     """
 
-    print('\nWelcome! This is a simulation of a search bar for our app.\n')
-    print('\nType a query and press enter. This will pop open a window displaying the results of your search. Press q to quit that window and return to the searchbar.\n')
+    print('\nWelcome! This is a simulation of a the search bar for our web app.')
+    print('\nType a query and press enter. This will pop open a window displaying the results of your search. Press q to quit that window and return to the searchbar.')
     print('\nWhen you\'re done searching and ready to close the prototype, enter "exit" or "quit" as a search query to shut everything down.\n')
 
     zero_results_count = 0
@@ -96,10 +97,31 @@ def searchbar():
             prompting = False
             print(f'\nQuitting. Thanks!\n\n{zero_results_count}/{search_count} searches returned zero results.\n')
         else:
+            # the actual searching within the search prototype
             search_count += 1
 
-            # the actual searching within the search prototype
-            result = es.search(index="games", body={"size" : 10, "query": {"multi_match" : { "query" : user_input, "fields": ["name^2", "designer"]}}})
+            if re.search(r'players?', user_input, re.I):
+                # search for number of players (within a range)
+                result = es.search(index="games", body={"size" : 15, "query": {"multi_match" : { "query" : user_input, "fields": ["all_players^3", "category"]}}})
+
+            elif re.search(r'play(?:ing)?\stime|time|min(?:utes)?|h(?:ou)?rs?', user_input, re.I):
+                # search for the playing time
+
+                single_digit = re.match(r'\s?(\d)\s', user_input)
+                if single_digit:  # a single digit is probably intended as an hour
+                    minutes = 60*int(single_digit.group(1))  # so convert it before searching
+                    result = es.search(index="games", body={"size" : 15, "query": {"multi_match" : { "query" : minutes, "fields": ["playing_time"]}}})
+                else:
+                    # 2+ digit number is assumed to be already in minutes
+                    result = es.search(index="games", body={"size" : 15, "query": {"multi_match" : { "query" : re.match(r'(\d+)', user_input).group(1), "fields": ["playing_time"]}}})
+
+            elif re.search(r'type|theme|style|game\splay', user_input, re.I):
+                # search for game play or style
+                result = es.search(index="games", body={"size" : 15, "query": {"multi_match" : { "query" : user_input, "fields": ["mechanic^3", "catergory^2", "name"]}}})
+
+            else:
+                # otherwise, do a general search prioritizing game titles
+                result = es.search(index="games", body={"size" : 15, "query": {"multi_match" : { "query" : user_input, "fields": ["name^2", "designer", "mechanic", "category", "version_published"]}}})
 
             if result:
                 # parse the ES response and accumulate into a giant string for output to less
