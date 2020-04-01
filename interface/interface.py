@@ -76,6 +76,7 @@ def searchbar():
 
     print('\nWelcome! This is a simulation of a the search bar for our web app.')
     print('\nType a query and press enter. This will pop open a window displaying the results of your search. Press q to quit that window and return to the searchbar.')
+    print('\nTry searching for games by their name, name of the creator(s), number of players, playing time, or game type.')
     print('\nWhen you\'re done searching and ready to close the prototype, enter "exit" or "quit" as a search query to shut everything down.\n')
 
     zero_results_count = 0
