@@ -114,7 +114,9 @@ def searchbar():
                     result = es.search(index="games", body={"size" : 15, "query": {"multi_match" : { "query" : minutes, "fields": ["playing_time"]}}})
                 else:
                     # 2+ digit number is assumed to be already in minutes
-                    result = es.search(index="games", body={"size" : 15, "query": {"multi_match" : { "query" : re.match(r'(\d+)', user_input).group(1), "fields": ["playing_time"]}}})
+                    minutes = re.match(r'(\d+)', user_input)
+                    if minutes:
+                        result = es.search(index="games", body={"size" : 15, "query": {"multi_match" : { "query" : minutes.group(1), "fields": ["playing_time"]}}})
 
             elif re.search(r'type|theme|style|game\splay', user_input, re.I):
                 # search for game play or style
