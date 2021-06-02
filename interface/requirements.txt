@@ -1,5 +1,5 @@
 click==7.1.1
 elasticsearch==7.6.0
 prompt-toolkit==3.0.5
-urllib3==1.25.8
+urllib3==1.26.5
 wcwidth==0.1.9
